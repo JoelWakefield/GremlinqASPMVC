@@ -6,7 +6,7 @@
     <h1 class="display-4">Graph</h1>
 
     <div id="relationships-container">
-        <div id="relationships-header" class="mb-lg-n1 row justify-content-around">
+        <div id="relationships-header" class="mb-4 row justify-content-around">
             <div class="col-4">
                 <div>Parent</div>
                 <div>@Html.DropDownList("SelectParent", ViewData["Parents"] as IEnumerable<SelectListItem>)</div>
@@ -22,14 +22,14 @@
         </div>
 
         <div id="relationships-body" class="row justify-content-between">
-            <div class="col-4">
-                p
+            <div id="parent-list" class="col-4">
+                
             </div>
-            <div class="col-3">
-                r
+            <div id="relationship-list" class="col-3">
+                
             </div>
-            <div class="col-4">
-                c
+            <div id="child-list" class="col-4">
+                
             </div>
         </div>
     </div>
@@ -39,6 +39,12 @@
     #relationships-body {
         margin: 0 auto;
         width: 100%;
+    }
+    .vertex {
+        background-color: aliceblue;
+        border: solid 1px blue;
+        border-radius: 8px;
+        margin-bottom: 1em;
     }
 </style>
 
@@ -53,6 +59,10 @@
     const selectRelationship = document.getElementById("SelectRelationship");
     const selectChild = document.getElementById("SelectChild");
 
+    const parentList = document.getElementById("parent-list");
+    const relationshipList = document.getElementById("relationship-list");
+    const childList = document.getElementById("child-list");
+
     selectParent.addEventListener("mouseup", (_) => filterOtherOptions(selectParent, selectors.PARENT));
     selectRelationship.addEventListener("mouseup", (_) => filterOtherOptions(selectRelationship, selectors.RELATIONSHIPS));
     selectChild.addEventListener("mouseup", (_) => filterOtherOptions(selectChild, selectors.CHILD));
@@ -64,6 +74,10 @@
             selectParent.value = "All";
             selectRelationship.value = "All";
             selectChild.value = "All";
+
+            resetVertices(
+                ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
+                parentList);
 
             return;
         }
@@ -129,4 +143,40 @@
                 selectRelationship.value = rel;
         }
     }
+
+
+    function createVertex(text, listElement) {
+        let div = document.createElement('div');
+        div.classList.add('vertex');
+        div.textContent = text;
+
+        listElement.appendChild(div);
+    }
+
+    function buildVertices(url, parentElement) {
+        fetch(url)
+            .then(response => response.json())
+            .then(data => data.forEach(v => {
+                var name = (typeof v.name === typeof String()) ?
+                    v.name :
+                    v.name.value;
+                createVertex(name, parentElement);
+            }));
+    }
+
+    function resetVertices(urls, parent, clearlist = true) {
+        //  remove all children before adding more
+        if (clearlist)
+            while (parentList.firstChild)
+                parentList.removeChild(parentList.firstChild);
+
+        //  add new vertices
+        urls.forEach(url => buildVertices(url, parent));
+    }
+
+
+    resetVertices(
+        ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
+        parentList,
+        false);
 </script>

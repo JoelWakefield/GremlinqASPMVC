@@ -11,6 +11,7 @@ using GremlinqASPMVC.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace GremlinqASPMVC.Controllers
 {
@@ -20,10 +21,12 @@ namespace GremlinqASPMVC.Controllers
         private readonly IEnumerable<string> Edges = new string[] { "All", "Knows", "Owns", "Created" };
 
         private readonly ILogger<HomeController> _logger;
+        private readonly IGremlinQuerySource source;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, IGremlinQuerySource source)
         {
             _logger = logger;
+            this.source = source;
         }
 
         public IActionResult Index()
@@ -33,6 +36,33 @@ namespace GremlinqASPMVC.Controllers
             ViewData["Children"] = new SelectList(Vertices);
 
             return View();
+        }
+
+        public JsonResult GetPeople()
+        {
+            var people = new People(source
+                .V<Person>()
+                .ToArrayAsync()
+                .Result);
+            return Json(people);
+        }
+
+        public JsonResult GetPets()
+        {
+            var pets = new Pets(source
+                .V<Pet>()
+                .ToArrayAsync()
+                .Result);
+            return Json(pets);
+        }
+
+        public JsonResult GetSoftwares()
+        {
+            var softwares = new Softwares(source
+                .V<Software>()
+                .ToArrayAsync()
+                .Result);
+            return Json(softwares);
         }
 
         public IActionResult Privacy()
