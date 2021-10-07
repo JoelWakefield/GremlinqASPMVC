@@ -3,6 +3,130 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">Graph</h1>
+
+    <div id="relationships-container">
+        <div id="relationships-header" class="mb-lg-n1 row justify-content-around">
+            <div class="col-4">
+                <div>Parent</div>
+                <div>@Html.DropDownList("SelectParent", ViewData["Parents"] as IEnumerable<SelectListItem>)</div>
+            </div>
+            <div class="col-3">
+                <div>Relationship</div>
+                <div>@Html.DropDownList("SelectRelationship", ViewData["Relationships"] as IEnumerable<SelectListItem>)</div>
+            </div>
+            <div class="col-4">
+                <div>Child</div>
+                <div>@Html.DropDownList("SelectChild", ViewData["Children"] as IEnumerable<SelectListItem>)</div>
+            </div>
+        </div>
+
+        <div id="relationships-body" class="row justify-content-between">
+            <div class="col-4">
+                p
+            </div>
+            <div class="col-3">
+                r
+            </div>
+            <div class="col-4">
+                c
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+    #relationships-body {
+        margin: 0 auto;
+        width: 100%;
+    }
+</style>
+
+<script>
+    const selectors = {
+        PARENT: 'p',
+        RELATIONSHIPS: 'r',
+        CHILD: 'c'
+    }
+
+    const selectParent = document.getElementById("SelectParent");
+    const selectRelationship = document.getElementById("SelectRelationship");
+    const selectChild = document.getElementById("SelectChild");
+
+    selectParent.addEventListener("mouseup", (_) => filterOtherOptions(selectParent, selectors.PARENT));
+    selectRelationship.addEventListener("mouseup", (_) => filterOtherOptions(selectRelationship, selectors.RELATIONSHIPS));
+    selectChild.addEventListener("mouseup", (_) => filterOtherOptions(selectChild, selectors.CHILD));
+
+    function filterOtherOptions(ele, select) {
+        var text = ele.options[ele.selectedIndex].text;
+
+        if (text.toLowerCase() === 'all') {
+            selectParent.value = "All";
+            selectRelationship.value = "All";
+            selectChild.value = "All";
+
+            return;
+        }
+
+        switch (select) {
+            case selectors.PARENT:
+                var rel, ch;
+
+                switch (text.toLowerCase()) {
+                    case 'person':
+                        rel = ["Knows"];
+                        ch = ["Person"];
+                        break;
+                    case 'pet':
+                        rel = ["Owns"];
+                        ch = ["Person"];
+                        break;
+                    case 'software':
+                        rel = ["Created"];
+                        ch = ["Person"];
+                }
+                selectRelationship.value = rel;
+                selectChild.value = ch;
+
+                break;
+            case selectors.RELATIONSHIPS:
+                var par, ch;
+
+                switch (text.toLowerCase()) {
+                    case 'knows':
+                        par = ["Person"];
+                        ch = ["Person"];
+                        break;
+                    case 'owns':
+                        par = ["Person"];
+                        ch = ["Pet"];
+                        break;
+                    case 'created':
+                        par = ["Person"];
+                        ch = ["Software"];
+                }
+                selectParent.value = par;
+                selectChild.value = ch;
+
+                break;
+            case selectors.CHILD:
+                var par, rel;
+
+                switch (text.toLowerCase()) {
+                    case 'person':
+                        par = ["Person"];
+                        rel = ["Knows"];
+                        break;
+                    case 'pet':
+                        par = ["Person"];
+                        rel = ["Owns"];
+                        break;
+                    case 'software':
+                        par = ["Person"];
+                        rel = ["Created"];
+                }
+                selectParent.value = par;
+                selectRelationship.value = rel;
+        }
+    }
+</script>
