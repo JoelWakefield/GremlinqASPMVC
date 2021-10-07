@@ -75,9 +75,20 @@
             selectRelationship.value = "All";
             selectChild.value = "All";
 
-            resetVertices(
+            resetElements(
                 ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
-                parentList);
+                parentList,
+                buildVertices);
+
+            resetElements(
+                ['/Home/GetKnows', '/Home/GetOwns', '/Home/GetCreated'],
+                relationshipList,
+                buildEdges);
+
+            resetElements(
+                ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
+                childList,
+                buildVertices);
 
             return;
         }
@@ -153,6 +164,14 @@
         listElement.appendChild(div);
     }
 
+    function createEdge(text, listElement) {
+        let div = document.createElement('div');
+        div.classList.add('vertex');
+        div.textContent = text;
+
+        listElement.appendChild(div);
+    }
+
     function buildVertices(url, parentElement) {
         fetch(url)
             .then(response => response.json())
@@ -164,19 +183,40 @@
             }));
     }
 
-    function resetVertices(urls, parent, clearlist = true) {
+    function buildEdges(url, parentElement) {
+        fetch(url)
+            .then(response => response.json())
+            .then(data => data.forEach(v => {
+                createEdge(v.label, parentElement);
+            }));
+    }
+
+    function resetElements(urls, parent, buildFunc, clearlist = true) {
         //  remove all children before adding more
         if (clearlist)
-            while (parentList.firstChild)
-                parentList.removeChild(parentList.firstChild);
+            while (parent.firstChild)
+                parent.removeChild(parent.firstChild);
 
         //  add new vertices
-        urls.forEach(url => buildVertices(url, parent));
+        urls.forEach(url => buildFunc(url, parent));
     }
 
 
-    resetVertices(
+    resetElements(
         ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
         parentList,
+        buildVertices,
+        false);
+
+    resetElements(
+        ['/Home/GetKnows', '/Home/GetOwns', '/Home/GetCreated'],
+        relationshipList,
+        buildEdges,
+        false);
+
+    resetElements(
+        ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
+        childList,
+        buildVertices,
         false);
 </script>

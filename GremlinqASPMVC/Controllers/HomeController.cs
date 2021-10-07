@@ -38,31 +38,46 @@ namespace GremlinqASPMVC.Controllers
             return View();
         }
 
-        public JsonResult GetPeople()
+        public async Task<JsonResult> GetPeople()
         {
-            var people = new People(source
+            return Json(await source
                 .V<Person>()
-                .ToArrayAsync()
-                .Result);
-            return Json(people);
+                .ToArrayAsync());
         }
 
-        public JsonResult GetPets()
+        public async Task<JsonResult> GetPets()
         {
-            var pets = new Pets(source
+            return Json(await source
                 .V<Pet>()
-                .ToArrayAsync()
-                .Result);
-            return Json(pets);
+                .ToArrayAsync());
         }
 
-        public JsonResult GetSoftwares()
+        public async Task<JsonResult> GetSoftwares()
         {
-            var softwares = new Softwares(source
+            return Json(await source
                 .V<Software>()
-                .ToArrayAsync()
-                .Result);
-            return Json(softwares);
+                .ToArrayAsync());
+        }
+
+        public async Task<JsonResult> GetKnows()
+        {
+            return Json(await source
+                .E<Knows>()
+                .ToArrayAsync());
+        }
+
+        public async Task<JsonResult> GetOwns()
+        {
+            return Json(await source
+                .E<Owns>()
+                .ToArrayAsync());
+        }
+
+        public async Task<JsonResult> GetCreated()
+        {
+            return Json(await source
+                .E<Created>()
+                .ToArrayAsync());
         }
 
         public IActionResult Privacy()
