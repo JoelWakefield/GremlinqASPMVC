@@ -38,6 +38,7 @@ namespace GremlinqASPMVC.Controllers
             return View();
         }
 
+        [HttpGet]
         public async Task<JsonResult> GetPeople()
         {
             return Json(await source
@@ -45,6 +46,7 @@ namespace GremlinqASPMVC.Controllers
                 .ToArrayAsync());
         }
 
+        [HttpGet]
         public async Task<JsonResult> GetPets()
         {
             return Json(await source
@@ -52,6 +54,7 @@ namespace GremlinqASPMVC.Controllers
                 .ToArrayAsync());
         }
 
+        [HttpGet]
         public async Task<JsonResult> GetSoftwares()
         {
             return Json(await source
@@ -59,6 +62,15 @@ namespace GremlinqASPMVC.Controllers
                 .ToArrayAsync());
         }
 
+        [HttpGet]
+        public async Task<JsonResult> GetVertex(string id)
+        {
+            return Json(await source
+                .V(id)
+                .ToArrayAsync());
+        }
+
+        [HttpGet]
         public async Task<JsonResult> GetKnows()
         {
             return Json(await source
@@ -66,6 +78,7 @@ namespace GremlinqASPMVC.Controllers
                 .ToArrayAsync());
         }
 
+        [HttpGet]
         public async Task<JsonResult> GetOwns()
         {
             return Json(await source
@@ -73,6 +86,7 @@ namespace GremlinqASPMVC.Controllers
                 .ToArrayAsync());
         }
 
+        [HttpGet]
         public async Task<JsonResult> GetCreated()
         {
             return Json(await source
@@ -80,9 +94,25 @@ namespace GremlinqASPMVC.Controllers
                 .ToArrayAsync());
         }
 
-        public IActionResult Privacy()
+        [HttpGet]
+        public async Task<JsonResult> GetEdge(string id)
         {
-            return View();
+            return Json(await source
+                .E(id)
+                .ToArrayAsync());
+        }
+
+        public async Task TextStream()
+        {
+            Response.ContentType = "text/plain";
+
+            var writer = new StreamWriter(Response.Body, Encoding.UTF8)
+            {
+                AutoFlush = true
+            };
+
+            await new Logic(source, writer)
+                .Run();
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

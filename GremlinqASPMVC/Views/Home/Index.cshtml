@@ -67,6 +67,28 @@
     selectRelationship.addEventListener("mouseup", (_) => filterOtherOptions(selectRelationship, selectors.RELATIONSHIPS));
     selectChild.addEventListener("mouseup", (_) => filterOtherOptions(selectChild, selectors.CHILD));
 
+    parentList.addEventListener('click', (e) => {
+        if (e.target !== e.currentTarget) {
+            var id = e.target.childNodes[1].textContent;
+
+            resetElements(
+                [`/Home/GetVertex/${id}`],
+                parentList,
+                buildVertices);
+        }
+    });
+
+    relationshipList.addEventListener('click', (e) => {
+        if (e.target !== e.currentTarget) {
+            var id = e.target.childNodes[1].textContent;
+
+            resetElements(
+                [`/Home/GetEdge/${id}`],
+                relationshipList,
+                buildEdges);
+        }
+    });
+
     function filterOtherOptions(ele, select) {
         var text = ele.options[ele.selectedIndex].text;
 
@@ -101,14 +123,61 @@
                     case 'person':
                         rel = ["Knows"];
                         ch = ["Person"];
+
+                        resetElements(
+                            ['/Home/GetPeople'],
+                            parentList,
+                            buildVertices);
+
+                        resetElements(
+                            ['/Home/GetKnows', '/Home/GetOwns', '/Home/GetCreated'],
+                            relationshipList,
+                            buildEdges);
+
+                        resetElements(
+                            ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
+                            childList,
+                            buildVertices);
+
                         break;
                     case 'pet':
                         rel = ["Owns"];
                         ch = ["Person"];
+
+                        resetElements(
+                            ['/Home/GetPets'],
+                            parentList,
+                            buildVertices);
+
+                        resetElements(
+                            ['/Home/GetOwns'],
+                            relationshipList,
+                            buildEdges);
+
+                        resetElements(
+                            ['/Home/GetPeople'],
+                            childList,
+                            buildVertices);
+
                         break;
                     case 'software':
                         rel = ["Created"];
                         ch = ["Person"];
+
+                        resetElements(
+                            ['/Home/GetSoftwares'],
+                            parentList,
+                            buildVertices);
+
+                        resetElements(
+                            ['/Home/GetCreated'],
+                            relationshipList,
+                            buildEdges);
+
+                        resetElements(
+                            ['/Home/GetPeople'],
+                            childList,
+                            buildVertices);
                 }
                 selectRelationship.value = rel;
                 selectChild.value = ch;
@@ -121,14 +190,62 @@
                     case 'knows':
                         par = ["Person"];
                         ch = ["Person"];
+
+                        resetElements(
+                            ['/Home/GetPeople'],
+                            parentList,
+                            buildVertices);
+
+                        resetElements(
+                            ['/Home/GetKnows'],
+                            relationshipList,
+                            buildEdges);
+
+                        resetElements(
+                            ['/Home/GetPeople'],
+                            childList,
+                            buildVertices);
+
                         break;
                     case 'owns':
                         par = ["Person"];
                         ch = ["Pet"];
+
+                        resetElements(
+                            ['/Home/GetPeople'],
+                            parentList,
+                            buildVertices);
+
+                        resetElements(
+                            ['/Home/GetOwns'],
+                            relationshipList,
+                            buildEdges);
+
+                        resetElements(
+                            ['/Home/GetPets'],
+                            childList,
+                            buildVertices);
+
                         break;
                     case 'created':
                         par = ["Person"];
                         ch = ["Software"];
+
+                        resetElements(
+                            ['/Home/GetPeople'],
+                            parentList,
+                            buildVertices);
+
+                        resetElements(
+                            ['/Home/GetCreated'],
+                            relationshipList,
+                            buildEdges);
+
+                        resetElements(
+                            ['/Home/GetSoftwares'],
+                            childList,
+                            buildVertices);
+
                 }
                 selectParent.value = par;
                 selectChild.value = ch;
@@ -141,14 +258,61 @@
                     case 'person':
                         par = ["Person"];
                         rel = ["Knows"];
+
+                        resetElements(
+                            ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
+                            parentList,
+                            buildVertices);
+
+                        resetElements(
+                            ['/Home/GetKnows', '/Home/GetOwns', '/Home/GetCreated'],
+                            relationshipList,
+                            buildEdges);
+
+                        resetElements(
+                            ['/Home/GetPeople'],
+                            childList,
+                            buildVertices);
+
                         break;
                     case 'pet':
                         par = ["Person"];
                         rel = ["Owns"];
+
+                        resetElements(
+                            ['/Home/GetPeople'],
+                            parentList,
+                            buildVertices);
+
+                        resetElements(
+                            ['/Home/GetOwns'],
+                            relationshipList,
+                            buildEdges);
+
+                        resetElements(
+                            ['/Home/GetPets'],
+                            childList,
+                            buildVertices);
+
                         break;
                     case 'software':
                         par = ["Person"];
                         rel = ["Created"];
+
+                        resetElements(
+                            ['/Home/GetPeople'],
+                            parentList,
+                            buildVertices);
+
+                        resetElements(
+                            ['/Home/GetCreated'],
+                            relationshipList,
+                            buildEdges);
+
+                        resetElements(
+                            ['/Home/GetSoftwares'],
+                            childList,
+                            buildVertices);
                 }
                 selectParent.value = par;
                 selectRelationship.value = rel;
@@ -156,19 +320,33 @@
     }
 
 
-    function createVertex(text, listElement) {
+    function createVertex(v, listElement) {
         let div = document.createElement('div');
-        div.classList.add('vertex');
-        div.textContent = text;
+        let hidden = document.createElement('div');
 
+        hidden.style.display = 'none';
+        hidden.textContent = v.id;
+
+        div.classList.add('vertex');
+        div.textContent = (typeof v.name === typeof String()) ?
+            v.name :
+            v.name.value;
+
+        div.appendChild(hidden);
         listElement.appendChild(div);
     }
 
-    function createEdge(text, listElement) {
+    function createEdge(e, listElement) {
         let div = document.createElement('div');
-        div.classList.add('vertex');
-        div.textContent = text;
+        let hidden = document.createElement('div');
 
+        hidden.style.display = 'none';
+        hidden.textContent = e.id;
+
+        div.classList.add('vertex');
+        div.textContent = e.label;
+
+        div.appendChild(hidden);
         listElement.appendChild(div);
     }
 
@@ -176,18 +354,15 @@
         fetch(url)
             .then(response => response.json())
             .then(data => data.forEach(v => {
-                var name = (typeof v.name === typeof String()) ?
-                    v.name :
-                    v.name.value;
-                createVertex(name, parentElement);
+                createVertex(v, parentElement);
             }));
     }
 
     function buildEdges(url, parentElement) {
         fetch(url)
             .then(response => response.json())
-            .then(data => data.forEach(v => {
-                createEdge(v.label, parentElement);
+            .then(data => data.forEach(e => {
+                createEdge(e, parentElement);
             }));
     }
 
