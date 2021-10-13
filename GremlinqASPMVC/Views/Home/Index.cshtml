@@ -25,8 +25,10 @@
             <div id="parent-list" class="col-4">
                 
             </div>
-            <div id="relationship-list" class="col-3">
-                
+            <div id="relationship-list" class="col-4">
+                <canvas id="relationship-canvas" width="200" height="100"
+                        style="border:1px solid #000000;">
+                </canvas>
             </div>
             <div id="child-list" class="col-4">
                 
@@ -63,6 +65,10 @@
     const relationshipList = document.getElementById("relationship-list");
     const childList = document.getElementById("child-list");
 
+    var c = document.getElementById("relationship-canvas");
+    var ctx = c.getContext("2d");
+
+
     selectParent.addEventListener("mouseup", (_) => filterOtherOptions(selectParent, selectors.PARENT));
     selectRelationship.addEventListener("mouseup", (_) => filterOtherOptions(selectRelationship, selectors.RELATIONSHIPS));
     selectChild.addEventListener("mouseup", (_) => filterOtherOptions(selectChild, selectors.CHILD));
@@ -71,21 +77,86 @@
         if (e.target !== e.currentTarget) {
             var id = e.target.childNodes[1].textContent;
 
-            resetElements(
-                [`/Home/GetVertex/${id}`],
-                parentList,
-                buildVertices);
+            fetch(`/Home/GetVertex/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    clearList(parentList);
+                    clearList(childList);
+
+                    var { connections, parents, children } = constructConnections(data);
+                    connectVertices(connections);
+                    console.log(connections, parents, children);
+
+                    parents.forEach(p => createVertex(p, parentList));
+                    children.forEach(c => createVertex(c, childList));
+                });
         }
     });
+
+    function constructConnections(list) {
+        var connections = [];
+        var parentIds = [];
+        var childIds = [];
+        var parents = [];
+        var children = [];
+
+        for (var i = 0; i < list.length; i++) {
+            //  get parent index
+            var parentInd = parentIds.findIndex(p => p === list[i][0]['id']);
+            //console.log('p',parents, parentInd);
+
+            if (parentInd < 0) {
+                parentInd = parentIds.length;
+                parentIds.push(list[i][0]['id']);
+                parents.push(list[i][0]);
+            }
+
+            //  get child index
+            var childInd = childIds.findIndex(c => c === list[i][1]['id']);
+            //console.log('c',children, childInd);
+
+            if (childInd < 0) {
+                childInd = childIds.length;
+                childIds.push(list[i][1]['id']);
+                children.push(list[i][1]);
+            }
+
+            //  Add indices to the connections
+            connections.push({ parentInd, childInd });
+        }
+
+        return { connections, parents, children };
+    }
+
+    function connectVertices(vPairs) {
+        var w = c.clientWidth;
+        var h = 41;
+        var b = 12;
+
+        vPairs.forEach(pair => {
+            ctx.moveTo(0, pair.parentInd * h + b);
+            ctx.lineTo(w, pair.childInd * h + b);
+        });
+
+        ctx.lineWidth = 4;
+        ctx.stroke();
+    }
 
     relationshipList.addEventListener('click', (e) => {
         if (e.target !== e.currentTarget) {
             var id = e.target.childNodes[1].textContent;
 
-            resetElements(
-                [`/Home/GetEdge/${id}`],
-                relationshipList,
-                buildEdges);
+            fetch(`/Home/GetEdge/${id}`).
+                then(response => response.json()).
+                then(data => {
+                    //  remove all children before adding more
+                    if (clearlist)
+                        while (parent.firstChild)
+                            parent.removeChild(parent.firstChild);
+
+                    //  add new vertices
+                    urls.forEach(url => buildFunc(url, parent));
+                });
         }
     });
 
@@ -321,6 +392,8 @@
 
 
     function createVertex(v, listElement) {
+        console.log(v, listElement);
+
         let div = document.createElement('div');
         let hidden = document.createElement('div');
 
@@ -330,7 +403,7 @@
         div.classList.add('vertex');
         div.textContent = (typeof v.name === typeof String()) ?
             v.name :
-            v.name.value;
+            v.name?.value;
 
         div.appendChild(hidden);
         listElement.appendChild(div);
@@ -348,6 +421,11 @@
 
         div.appendChild(hidden);
         listElement.appendChild(div);
+    }
+
+    function clearList(list) {
+        while (list.firstChild)
+            list.removeChild(list.firstChild);
     }
 
     function buildVertices(url, parentElement) {
@@ -377,6 +455,16 @@
     }
 
 
+    function resizeCanvas() {
+        c.width = relationshipList.clientWidth - 30;
+        c.height = window.innerHeight / 2;
+    }
+
+    window.onresize = resizeCanvas;
+
+    resizeCanvas();
+    
+
     resetElements(
         ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
         parentList,
@@ -384,14 +472,9 @@
         false);
 
     resetElements(
-        ['/Home/GetKnows', '/Home/GetOwns', '/Home/GetCreated'],
-        relationshipList,
-        buildEdges,
-        false);
-
-    resetElements(
         ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
         childList,
         buildVertices,
         false);
+
 </script>

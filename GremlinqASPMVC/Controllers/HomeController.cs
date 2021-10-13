@@ -65,9 +65,28 @@ namespace GremlinqASPMVC.Controllers
         [HttpGet]
         public async Task<JsonResult> GetVertex(string id)
         {
-            return Json(await source
-                .V(id)
-                .ToArrayAsync());
+            var items = await source
+                .V<Person>(id)
+                .As((__, person) => __
+                    .OutE<Created>()
+                    .InV<Software>()
+                    .As((__, software) => __
+                        .Select(person, software)));
+
+            if (items != null)
+            {
+                List<dynamic> list = new List<dynamic>();
+
+                foreach (var item in items)
+                {
+                    var (h, t) = item;
+                    list.Add(new dynamic[] { h, t });
+                }
+
+                return Json(list);
+            }
+
+            return null;
         }
 
         [HttpGet]
