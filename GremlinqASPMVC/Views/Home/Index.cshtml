@@ -43,14 +43,26 @@
         width: 100%;
     }
     .vertex {
+        display: flex;
+        justify-content: space-between;
         background-color: aliceblue;
         border: solid 1px blue;
         border-radius: 8px;
         margin-bottom: 1em;
     }
+    .vert-item {
+        display: inline-block;
+        margin: 0 1em;
+    }
 </style>
 
 <script>
+    const relationshipType = {
+        KN: '1:n',
+        NK: 'n:1',
+        NN: 'n:n'
+    }
+
     const selectors = {
         PARENT: 'p',
         RELATIONSHIPS: 'r',
@@ -68,42 +80,74 @@
     var c = document.getElementById("relationship-canvas");
     var ctx = c.getContext("2d");
 
+    var connections = [];
+    var parentIds = [];
+    var childIds = [];
+
 
     selectParent.addEventListener("mouseup", (_) => filterOtherOptions(selectParent, selectors.PARENT));
     selectRelationship.addEventListener("mouseup", (_) => filterOtherOptions(selectRelationship, selectors.RELATIONSHIPS));
     selectChild.addEventListener("mouseup", (_) => filterOtherOptions(selectChild, selectors.CHILD));
 
+
     parentList.addEventListener('click', (e) => {
         if (e.target !== e.currentTarget) {
-            var id = e.target.childNodes[1].textContent;
-
-            fetch(`/Home/GetVertex/${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    clearList(parentList);
-                    clearList(childList);
-
-                    var { connections, parents, children } = constructConnections(data);
-                    connectVertices(connections);
-                    console.log(connections, parents, children);
-
-                    parents.forEach(p => createVertex(p, parentList));
-                    children.forEach(c => createVertex(c, childList));
-                });
+            displayConnections(buildUrls(e));
         }
     });
 
+    childList.addEventListener('click', (e) => {
+        if (e.target !== e.currentTarget) {
+            displayConnections(buildUrls(e, false));
+        }
+    });
+
+    relationshipList.addEventListener('click', (e) => {
+        if (e.target !== e.currentTarget) {
+            //console.log(buildUrls(e, relationshipType.NN));
+            //displayConnections(buildUrls(e, relationshipType.NN));
+        }
+    });
+
+
+    function buildUrls(e, isParent = true) {
+        console.log(e.target);
+        var id = e.target.childNodes[2].textContent;
+        var actionType = e.target.childNodes[1].textContent;
+
+        var rType = isParent ? "1:n" : "n:1";
+        console.log(id, actionType);
+        switch (actionType) {
+            case "Person":
+                return [
+                    `Home/Knows/${id}/${rType}`,
+                    `Home/Owns/${id}/${rType}`,
+                    `Home/Created/${id}/${rType}`
+                ];
+            case "Pet":
+            case "Cat":
+            case "Dog":
+                return [
+                    `Home/Owns/${id}/${rType}`
+                ];
+            case "Software":
+                return [
+                    `Home/Created/${id}/${rType}`
+                ];
+            default:
+                console.error('could not define relationship');
+                return null;
+        }
+    }
+
     function constructConnections(list) {
-        var connections = [];
-        var parentIds = [];
-        var childIds = [];
+        var conn = [];
         var parents = [];
         var children = [];
 
         for (var i = 0; i < list.length; i++) {
             //  get parent index
             var parentInd = parentIds.findIndex(p => p === list[i][0]['id']);
-            //console.log('p',parents, parentInd);
 
             if (parentInd < 0) {
                 parentInd = parentIds.length;
@@ -113,7 +157,6 @@
 
             //  get child index
             var childInd = childIds.findIndex(c => c === list[i][1]['id']);
-            //console.log('c',children, childInd);
 
             if (childInd < 0) {
                 childInd = childIds.length;
@@ -122,10 +165,10 @@
             }
 
             //  Add indices to the connections
-            connections.push({ parentInd, childInd });
+            conn.push({ parentInd, childInd });
         }
 
-        return { connections, parents, children };
+        return { conn, parents, children };
     }
 
     function connectVertices(vPairs) {
@@ -142,23 +185,35 @@
         ctx.stroke();
     }
 
-    relationshipList.addEventListener('click', (e) => {
-        if (e.target !== e.currentTarget) {
-            var id = e.target.childNodes[1].textContent;
+    function displayConnections(urls) {
+        //  Clear current verts and lines
+        clearList(parentList);
+        clearList(childList);
 
-            fetch(`/Home/GetEdge/${id}`).
-                then(response => response.json()).
-                then(data => {
-                    //  remove all children before adding more
-                    if (clearlist)
-                        while (parent.firstChild)
-                            parent.removeChild(parent.firstChild);
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.beginPath();
 
-                    //  add new vertices
-                    urls.forEach(url => buildFunc(url, parent));
-                });
-        }
-    });
+        parentIds = [];
+        childIds = [];
+
+        urls.forEach(url => {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    //  configure vertices
+                    var { conn, parents, children } = constructConnections(data);
+                    connections.push(...conn);
+                    //console.log(connections, parents, children);
+
+                    //  Display
+                    connectVertices(conn);
+                    parents.forEach(p => createVertex(p, parentList));
+                    children.forEach(c => createVertex(c, childList));
+                })
+        });
+    }
+
+
 
     function filterOtherOptions(ele, select) {
         var text = ele.options[ele.selectedIndex].text;
@@ -168,92 +223,16 @@
             selectRelationship.value = "All";
             selectChild.value = "All";
 
-            resetElements(
-                ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
-                parentList,
-                buildVertices);
-
-            resetElements(
-                ['/Home/GetKnows', '/Home/GetOwns', '/Home/GetCreated'],
-                relationshipList,
-                buildEdges);
-
-            resetElements(
-                ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
-                childList,
-                buildVertices);
+            displayConnections([
+                'Home/Knows',
+                'Home/Owns',
+                'Home/Created'
+            ]);
 
             return;
         }
 
         switch (select) {
-            case selectors.PARENT:
-                var rel, ch;
-
-                switch (text.toLowerCase()) {
-                    case 'person':
-                        rel = ["Knows"];
-                        ch = ["Person"];
-
-                        resetElements(
-                            ['/Home/GetPeople'],
-                            parentList,
-                            buildVertices);
-
-                        resetElements(
-                            ['/Home/GetKnows', '/Home/GetOwns', '/Home/GetCreated'],
-                            relationshipList,
-                            buildEdges);
-
-                        resetElements(
-                            ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
-                            childList,
-                            buildVertices);
-
-                        break;
-                    case 'pet':
-                        rel = ["Owns"];
-                        ch = ["Person"];
-
-                        resetElements(
-                            ['/Home/GetPets'],
-                            parentList,
-                            buildVertices);
-
-                        resetElements(
-                            ['/Home/GetOwns'],
-                            relationshipList,
-                            buildEdges);
-
-                        resetElements(
-                            ['/Home/GetPeople'],
-                            childList,
-                            buildVertices);
-
-                        break;
-                    case 'software':
-                        rel = ["Created"];
-                        ch = ["Person"];
-
-                        resetElements(
-                            ['/Home/GetSoftwares'],
-                            parentList,
-                            buildVertices);
-
-                        resetElements(
-                            ['/Home/GetCreated'],
-                            relationshipList,
-                            buildEdges);
-
-                        resetElements(
-                            ['/Home/GetPeople'],
-                            childList,
-                            buildVertices);
-                }
-                selectRelationship.value = rel;
-                selectChild.value = ch;
-
-                break;
             case selectors.RELATIONSHIPS:
                 var par, ch;
 
@@ -262,67 +241,33 @@
                         par = ["Person"];
                         ch = ["Person"];
 
-                        resetElements(
-                            ['/Home/GetPeople'],
-                            parentList,
-                            buildVertices);
-
-                        resetElements(
-                            ['/Home/GetKnows'],
-                            relationshipList,
-                            buildEdges);
-
-                        resetElements(
-                            ['/Home/GetPeople'],
-                            childList,
-                            buildVertices);
+                        displayConnections([
+                            'Home/Knows'
+                        ]);
 
                         break;
                     case 'owns':
                         par = ["Person"];
                         ch = ["Pet"];
 
-                        resetElements(
-                            ['/Home/GetPeople'],
-                            parentList,
-                            buildVertices);
-
-                        resetElements(
-                            ['/Home/GetOwns'],
-                            relationshipList,
-                            buildEdges);
-
-                        resetElements(
-                            ['/Home/GetPets'],
-                            childList,
-                            buildVertices);
+                        displayConnections([
+                            'Home/Owns'
+                        ]);
 
                         break;
                     case 'created':
                         par = ["Person"];
                         ch = ["Software"];
 
-                        resetElements(
-                            ['/Home/GetPeople'],
-                            parentList,
-                            buildVertices);
-
-                        resetElements(
-                            ['/Home/GetCreated'],
-                            relationshipList,
-                            buildEdges);
-
-                        resetElements(
-                            ['/Home/GetSoftwares'],
-                            childList,
-                            buildVertices);
-
+                        displayConnections([
+                            'Home/Created'
+                        ]);
                 }
                 selectParent.value = par;
                 selectChild.value = ch;
 
                 break;
-            case selectors.CHILD:
+            default:
                 var par, rel;
 
                 switch (text.toLowerCase()) {
@@ -330,60 +275,27 @@
                         par = ["Person"];
                         rel = ["Knows"];
 
-                        resetElements(
-                            ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
-                            parentList,
-                            buildVertices);
-
-                        resetElements(
-                            ['/Home/GetKnows', '/Home/GetOwns', '/Home/GetCreated'],
-                            relationshipList,
-                            buildEdges);
-
-                        resetElements(
-                            ['/Home/GetPeople'],
-                            childList,
-                            buildVertices);
+                        displayConnections([
+                            'Home/Knows'
+                        ]);
 
                         break;
                     case 'pet':
                         par = ["Person"];
                         rel = ["Owns"];
 
-                        resetElements(
-                            ['/Home/GetPeople'],
-                            parentList,
-                            buildVertices);
-
-                        resetElements(
-                            ['/Home/GetOwns'],
-                            relationshipList,
-                            buildEdges);
-
-                        resetElements(
-                            ['/Home/GetPets'],
-                            childList,
-                            buildVertices);
+                        displayConnections([
+                            'Home/Owns'
+                        ]);
 
                         break;
                     case 'software':
                         par = ["Person"];
                         rel = ["Created"];
 
-                        resetElements(
-                            ['/Home/GetPeople'],
-                            parentList,
-                            buildVertices);
-
-                        resetElements(
-                            ['/Home/GetCreated'],
-                            relationshipList,
-                            buildEdges);
-
-                        resetElements(
-                            ['/Home/GetSoftwares'],
-                            childList,
-                            buildVertices);
+                        displayConnections([
+                            'Home/Created'
+                        ]);
                 }
                 selectParent.value = par;
                 selectRelationship.value = rel;
@@ -392,89 +304,92 @@
 
 
     function createVertex(v, listElement) {
-        console.log(v, listElement);
+        let vert = document.createElement('div');
+        vert.classList.add('vertex');
+        listElement.appendChild(vert);
 
-        let div = document.createElement('div');
-        let hidden = document.createElement('div');
-
-        hidden.style.display = 'none';
-        hidden.textContent = v.id;
-
-        div.classList.add('vertex');
-        div.textContent = (typeof v.name === typeof String()) ?
+        let name = document.createElement('div');
+        name.classList.add('vert-item');
+        name.textContent = (typeof v.name === typeof String()) ?
             v.name :
             v.name?.value;
+        vert.appendChild(name);
 
-        div.appendChild(hidden);
-        listElement.appendChild(div);
+        let label = document.createElement('div');
+        label.classList.add('vert-item');
+        label.textContent = v.label;
+        vert.appendChild(label);
+
+        let id = document.createElement('div');
+        id.style.display = 'none';
+        id.textContent = v.id;
+        vert.appendChild(id);
     }
 
-    function createEdge(e, listElement) {
-        let div = document.createElement('div');
-        let hidden = document.createElement('div');
+    //function createEdge(e, listElement) {
+    //    let div = document.createElement('div');
+    //    let hidden = document.createElement('div');
 
-        hidden.style.display = 'none';
-        hidden.textContent = e.id;
+    //    hidden.style.display = 'none';
+    //    hidden.textContent = e.id;
 
-        div.classList.add('vertex');
-        div.textContent = e.label;
+    //    div.classList.add('vertex');
+    //    div.textContent = e.label;
 
-        div.appendChild(hidden);
-        listElement.appendChild(div);
-    }
+    //    div.appendChild(hidden);
+    //    listElement.appendChild(div);
+    //}
+
+
+    //function buildVertices(url, parentElement) {
+    //    fetch(url)
+    //        .then(response => response.json())
+    //        .then(data => data.forEach(v => {
+    //            createVertex(v, parentElement);
+    //        }));
+    //}
+
+    //function buildEdges(url, parentElement) {
+    //    fetch(url)
+    //        .then(response => response.json())
+    //        .then(data => data.forEach(e => {
+    //            createEdge(e, parentElement);
+    //        }));
+    //}
+
+    //function resetElements(urls, parent, buildFunc, clearlist = true) {
+    //    //  remove all children before adding more
+    //    if (clearlist)
+    //        while (parent.firstChild)
+    //            parent.removeChild(parent.firstChild);
+
+    //    //  add new vertices
+    //    urls.forEach(url => buildFunc(url, parent));
+    //}
+
 
     function clearList(list) {
         while (list.firstChild)
             list.removeChild(list.firstChild);
     }
 
-    function buildVertices(url, parentElement) {
-        fetch(url)
-            .then(response => response.json())
-            .then(data => data.forEach(v => {
-                createVertex(v, parentElement);
-            }));
-    }
-
-    function buildEdges(url, parentElement) {
-        fetch(url)
-            .then(response => response.json())
-            .then(data => data.forEach(e => {
-                createEdge(e, parentElement);
-            }));
-    }
-
-    function resetElements(urls, parent, buildFunc, clearlist = true) {
-        //  remove all children before adding more
-        if (clearlist)
-            while (parent.firstChild)
-                parent.removeChild(parent.firstChild);
-
-        //  add new vertices
-        urls.forEach(url => buildFunc(url, parent));
-    }
-
-
     function resizeCanvas() {
         c.width = relationshipList.clientWidth - 30;
         c.height = window.innerHeight / 2;
+
+        //  redraw the connections
+        connectVertices(connections);
     }
+
 
     window.onresize = resizeCanvas;
 
     resizeCanvas();
     
-
-    resetElements(
-        ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
-        parentList,
-        buildVertices,
-        false);
-
-    resetElements(
-        ['/Home/GetPeople', '/Home/GetPets', '/Home/GetSoftwares'],
-        childList,
-        buildVertices,
-        false);
+    displayConnections([
+        'Home/Knows',
+        'Home/Owns',
+        'Home/Created'
+    ]);
 
 </script>

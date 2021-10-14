@@ -39,34 +39,228 @@ namespace GremlinqASPMVC.Controllers
         }
 
         [HttpGet]
-        public async Task<JsonResult> GetPeople()
+        [Route("Home/Person")]
+        public async Task<JsonResult> Person()
         {
-            return Json(await source
+            var items = await source
                 .V<Person>()
-                .ToArrayAsync());
+                .As((__, person) => __
+                    .OutE<Knows>()
+                    .InV<Person>()
+                    .As((__, people) => __
+                        .Select(person, people)));
+
+            if (items != null)
+                return Json(Repackage(items));
+            else
+                return null;
         }
 
         [HttpGet]
-        public async Task<JsonResult> GetPets()
-        {
-            return Json(await source
-                .V<Pet>()
-                .ToArrayAsync());
-        }
-
-        [HttpGet]
-        public async Task<JsonResult> GetSoftwares()
-        {
-            return Json(await source
-                .V<Software>()
-                .ToArrayAsync());
-        }
-
-        [HttpGet]
-        public async Task<JsonResult> GetVertex(string id)
+        [Route("Home/Person/{id}")]
+        public async Task<JsonResult> Person(string id)
         {
             var items = await source
                 .V<Person>(id)
+                .As((__, person) => __
+                    .OutE<Knows>()
+                    .InV<Person>()
+                    .As((__, people) => __
+                        .Select(person, people)));
+
+            if (items != null)
+                return Json(Repackage(items));
+            else
+                return null;
+        }
+
+        [HttpGet]
+        [Route("Home/Pet")]
+        public async Task<JsonResult> Pet()
+        {
+            var items = await source
+                .V<Pet>()
+                .As((__, pet) => __
+                    .InE<Owns>()
+                    .OutV<Person>()
+                    .As((__, person) => __
+                        .Select(person, pet)));
+
+            if (items != null)
+                return Json(Repackage(items));
+            else
+                return null;
+        }
+        
+        [HttpGet]
+        [Route("Home/Pet/{id}")]
+        public async Task<JsonResult> Pet(string id)
+        {
+            var items = await source
+                .V<Pet>(id)
+                .As((__, pet) => __
+                    .InE<Owns>()
+                    .OutV<Person>()
+                    .As((__, person) => __
+                        .Select(person, pet)));
+
+            if (items != null)
+                return Json(Repackage(items));
+            else
+                return null;
+        }
+
+        [HttpGet]
+        [Route("Home/Software")]
+        public async Task<JsonResult> Software()
+        {
+            var items = await source
+                .V<Software>()
+                .As((__, software) => __
+                    .InE<Created>()
+                    .OutV<Person>()
+                    .As((__, person) => __
+                        .Select(person, software)));
+
+            if (items != null)
+                return Json(Repackage(items));
+            else
+                return null;
+        }
+
+        [HttpGet]
+        [Route("Home/Software/{id}")]
+        public async Task<JsonResult> Software(string id)
+        {
+            var items = await source
+                .V<Software>(id)
+                .As((__, software) => __
+                    .InE<Created>()
+                    .OutV<Person>()
+                    .As((__, person) => __
+                        .Select(person, software)));
+
+            if (items != null)
+                return Json(Repackage(items));
+            else
+                return null;
+        }
+
+        [HttpGet]
+        [Route("Home/Knows")]
+        public async Task<JsonResult> Knows()
+        {
+            var items = await source
+                .V<Person>()
+                .As((__, person) => __
+                    .OutE<Knows>()
+                    .InV<Person>()
+                    .As((__, people) => __
+                        .Select(person, people)));
+
+            if (items != null)
+                return Json(Repackage(items));
+            else
+                return null;
+        }
+
+        [HttpGet]
+        [Route("Home/Knows/{id}/{relationshipType}")]
+        public async Task<JsonResult> Knows(string id, string relationshipType)
+        {
+            dynamic items;
+
+            switch (relationshipType)
+            {
+                case "1:n":
+                    items = await source
+                        .V<Person>(id)
+                        .As((__, person) => __
+                            .OutE<Knows>()
+                            .InV<Person>()
+                            .As((__, people) => __
+                                .Select(person, people)));
+                    break;
+                case "n:1":
+                    items = await source
+                        .V<Person>(id)
+                        .As((__, people) => __
+                            .InE<Knows>()
+                            .OutV<Person>()
+                            .As((__, person) => __
+                                .Select(person, people)));
+                    break;
+                default:
+                    return null;
+            }
+
+            if (items != null)
+                return Json(Repackage(items));
+            else
+                return null;
+        }
+
+
+        [HttpGet]
+        [Route("Home/Owns")]
+        public async Task<JsonResult> Owns()
+        {
+            var items = await source
+                .V<Person>()
+                .As((__, person) => __
+                    .OutE<Owns>()
+                    .InV<Pet>()
+                    .As((__, pet) => __
+                        .Select(person, pet)));
+
+            if (items != null)
+                return Json(Repackage(items));
+            else
+                return null;
+        }
+
+        [HttpGet]
+        [Route("Home/Owns/{id}/{relationshipType}")]
+        public async Task<JsonResult> Owns(string id, string relationshipType)
+        {
+            dynamic items;
+
+            switch (relationshipType)
+            {
+                case "1:n":
+                    items = await source
+                        .V<Person>(id)
+                        .As((__, person) => __
+                            .OutE<Owns>()
+                            .InV<Pet>()
+                            .As((__, pet) => __
+                                .Select(person, pet)));
+                    break;
+                case "n:1":
+                    items = await source
+                        .V<Pet>(id)
+                        .As((__, pet) => __
+                            .InE<Owns>()
+                            .OutV<Person>()
+                            .As((__, person) => __
+                                .Select(person, pet)));
+                    break;
+                default:
+                    return null;
+            }
+
+            if (items != null)
+                return Json(Repackage(items));
+            else
+                return null;
+        }
+
+        [HttpGet]
+        [Route("Home/Created")]
+        public async Task<JsonResult> Created()
+        {
+            var items = await source
+                .V<Person>()
                 .As((__, person) => __
                     .OutE<Created>()
                     .InV<Software>()
@@ -74,52 +268,49 @@ namespace GremlinqASPMVC.Controllers
                         .Select(person, software)));
 
             if (items != null)
+                return Json(Repackage(items));
+            else
+                return null;
+        }
+
+        [HttpGet]
+        [Route("Home/Created/{id}/{relationshipType}")]
+        public async Task<JsonResult> Created(string id, string relationshipType)
+        {
+            dynamic items;
+
+            Type t = typeof(Person);
+
+            switch (relationshipType)
             {
-                List<dynamic> list = new List<dynamic>();
-
-                foreach (var item in items)
-                {
-                    var (h, t) = item;
-                    list.Add(new dynamic[] { h, t });
-                }
-
-                return Json(list);
+                case "1:n":
+                    items = await source
+                        .V<Person>(id)
+                        .As((__, person) => __
+                            .OutE<Created>()
+                            .InV<Software>()
+                            .As((__, software) => __
+                                .Select(person, software)));
+                    break;
+                case "n:1":
+                    items = await source
+                        .V<Software>(id)
+                        .As((__, software) => __
+                            .InE<Created>()
+                            .OutV<Person>()
+                            .As((__, person) => __
+                                .Select(person, software)));
+                    break;
+                default:
+                    return null;
             }
 
-            return null;
+            if (items != null)
+                return Json(Repackage(items));
+            else
+                return null;
         }
 
-        [HttpGet]
-        public async Task<JsonResult> GetKnows()
-        {
-            return Json(await source
-                .E<Knows>()
-                .ToArrayAsync());
-        }
-
-        [HttpGet]
-        public async Task<JsonResult> GetOwns()
-        {
-            return Json(await source
-                .E<Owns>()
-                .ToArrayAsync());
-        }
-
-        [HttpGet]
-        public async Task<JsonResult> GetCreated()
-        {
-            return Json(await source
-                .E<Created>()
-                .ToArrayAsync());
-        }
-
-        [HttpGet]
-        public async Task<JsonResult> GetEdge(string id)
-        {
-            return Json(await source
-                .E(id)
-                .ToArrayAsync());
-        }
 
         public async Task TextStream()
         {
@@ -138,6 +329,46 @@ namespace GremlinqASPMVC.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+
+        private List<dynamic> Repackage((Person, Person)[] items)
+        {
+            List<dynamic> list = new List<dynamic>();
+
+            foreach (var item in items)
+            {
+                var (h, t) = item;
+                list.Add(new dynamic[] { h, t });
+            }
+
+            return list;
+        }
+
+        private List<dynamic> Repackage((Person, Pet)[] items)
+        {
+            List<dynamic> list = new List<dynamic>();
+
+            foreach (var item in items)
+            {
+                var (h, t) = item;
+                list.Add(new dynamic[] { h, t });
+            }
+
+            return list;
+        }
+
+        private List<dynamic> Repackage((Person, Software)[] items)
+        {
+            List<dynamic> list = new List<dynamic>();
+
+            foreach (var item in items)
+            {
+                var (h, t) = item;
+                list.Add(new dynamic[] { h, t });
+            }
+
+            return list;
         }
     }
 }
