@@ -32,6 +32,8 @@ namespace GremlinqASPMVC
                 setup.UseCosmosDb<Vertex, Edge>(x => x.PartitionKey));
 
             services.AddControllersWithViews();
+            services.AddMemoryCache();
+            services.AddScoped<GremlinqHelper>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
